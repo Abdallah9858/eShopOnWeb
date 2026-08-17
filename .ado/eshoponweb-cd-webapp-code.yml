@@ -24,11 +24,9 @@ stages:
 
     steps:
 
-    # Download artifacts from the CI pipeline
     - download: eshoponweb-ci
       displayName: Download CI artifacts
 
-    # Deploy Azure infrastructure
     - task: AzureResourceManagerTemplateDeployment@3
       displayName: Deploy App Service using Bicep
       inputs:
@@ -40,10 +38,9 @@ stages:
         location: '$(location)'
         templateLocation: 'Linked artifact'
         csmFile: '$(Pipeline.Workspace)/eshoponweb-ci/Bicep/webapp.bicep'
-        overrideParameters: '-webAppName $(webAppName) -location $(location)'
+        overrideParameters: '-webAppName $(webAppName)'
         deploymentMode: 'Incremental'
 
-    # Deploy the website to Azure App Service
     - task: AzureRmWebAppDeployment@4
       displayName: Deploy eShopOnWeb
       inputs:
