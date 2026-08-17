@@ -1,7 +1,7 @@
 resources:
   pipelines:
     - pipeline: eshoponweb-ci
-      source: eshoponweb-ci
+      source: eshoponweb-ci-webapp-code
       trigger: true
 
 variables:
