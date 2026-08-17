@@ -1,0 +1,53 @@
+# NAME THE PIPELINE SAME AS FILE (WITHOUT ".yml")
+
+resources:
+  pipelines:
+    - pipeline: eshoponweb-ci
+      source: eshoponweb-ci
+      trigger: true
+
+variables:
+  azureServiceConnection: 'azureconnection'
+  resourceGroup: 'az400'
+  location: 'West Europe'
+  subscriptionId: '2312afc3-aa93-4bd9-96f6-c7a769252f5e'
+  webAppName: 'az400-webapp'
+
+stages:
+- stage: Deploy
+  displayName: Deploy eShopOnWeb
+
+  jobs:
+  - job: Deploy
+    pool:
+      name: Default
+
+    steps:
+
+    # Download Website and Bicep artifacts from CI
+    - download: eshoponweb-ci
+
+    # Deploy Azure infrastructure
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: Deploy App Service using Bicep
+      inputs:
+        deploymentScope: 'Resource Group'
+        azureResourceManagerConnection: '$(azureServiceConnection)'
+        subscriptionId: '$(subscriptionId)'
+        action: 'Create Or Update Resource Group'
+        resourceGroupName: '$(resourceGroup)'
+        location: '$(location)'
+        templateLocation: 'Linked artifact'
+        csmFile: '$(Pipeline.Workspace)/eshoponweb-ci/Bicep/webapp.bicep'
+        overrideParameters: '-webAppName $(webAppName) -location $(location)'
+        deploymentMode: 'Incremental'
+
+    # Deploy the actual website
+    - task: AzureRmWebAppDeployment@4
+      displayName: Deploy eShopOnWeb
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: '$(azureServiceConnection)'
+        appType: 'webApp'
+        WebAppName: '$(webAppName)'
+        packageForLinux: '$(Pipeline.Workspace)/eshoponweb-ci/Website/Web.zip'
