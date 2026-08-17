@@ -3,7 +3,7 @@
 resources:
   pipelines:
     - pipeline: eshoponweb-ci
-      source: eshoponweb-ci
+      source: Abdallah9858.eShopOnWeb
       trigger: true
 
 variables:
