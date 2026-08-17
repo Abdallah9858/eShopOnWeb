@@ -1,4 +1,4 @@
-# NAME THE PIPELINE SAME AS FILE (WITHOUT ".yml")
+# .ado/eshoponweb-cd-webapp-code.yml
 
 resources:
   pipelines:
@@ -24,10 +24,9 @@ stages:
 
     steps:
 
-    # Download Website and Bicep artifacts from CI
     - download: eshoponweb-ci
+      displayName: Download CI artifacts
 
-    # Deploy Azure infrastructure
     - task: AzureResourceManagerTemplateDeployment@3
       displayName: Deploy App Service using Bicep
       inputs:
@@ -42,7 +41,6 @@ stages:
         overrideParameters: '-webAppName $(webAppName) -location $(location)'
         deploymentMode: 'Incremental'
 
-    # Deploy the actual website
     - task: AzureRmWebAppDeployment@4
       displayName: Deploy eShopOnWeb
       inputs:
