@@ -11,7 +11,7 @@ variables:
   resourceGroup: 'az400'
   location: 'West Europe'
   subscriptionId: '2312afc3-aa93-4bd9-96f6-c7a769252f5e'
-  webAppName: 'az400-webapp'
+  webAppName: 'az400-webapp-abdallah-2026'
 
 stages:
 - stage: Deploy
