@@ -24,23 +24,27 @@ stages:
 
     steps:
 
+    # Download CI artifacts
     - download: eshoponweb-ci
       displayName: Download CI artifacts
 
-    - task: AzureResourceManagerTemplateDeployment@3
+    # Deploy App Service Plan + App Service using Bicep
+    - task: AzureCLI@2
       displayName: Deploy App Service using Bicep
       inputs:
-        deploymentScope: 'Resource Group'
-        azureResourceManagerConnection: '$(azureServiceConnection)'
-        subscriptionId: '$(subscriptionId)'
-        action: 'Create Or Update Resource Group'
-        resourceGroupName: '$(resourceGroup)'
-        location: '$(location)'
-        templateLocation: 'Linked artifact'
-        csmFile: '$(Pipeline.Workspace)/eshoponweb-ci/Bicep/webapp.bicep'
-        overrideParameters: '-webAppName $(webAppName) -location $(location)'
-        deploymentMode: 'Incremental'
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az account set --subscription "$(subscriptionId)"
 
+          az deployment group create \
+            --resource-group "$(resourceGroup)" \
+            --template-file "$(Pipeline.Workspace)/eshoponweb-ci/Bicep/webapp.bicep" \
+            --parameters webAppName="$(webAppName)" location="$(location)" \
+            --mode Incremental
+
+    # Deploy website
     - task: AzureRmWebAppDeployment@4
       displayName: Deploy eShopOnWeb
       inputs:
