@@ -1,55 +1,56 @@
-resources:
-  pipelines:
-    - pipeline: eshoponweb-ci
-      source: eshoponweb-ci-webapp-code
-      trigger: true
+#NAME THE PIPELINE SAME AS FILE (WITHOUT ".yml")
+# trigger:
+# - main
 
-variables:
-  resource-group: 'az400'
-  location: 'West Europe'
-  templateFile: 'webapp.bicep'
-  subscriptionid: '2312afc3-aa93-4bd9-96f6-c7a769252f5e'
-  azureserviceconnection: 'azureconnection'
-  webappname: 'az400-webapp-NAME'
-  # webappname: 'webapp-windows-eshop'
-  
+resources:
+  repositories:
+    - repository: self
+      trigger: none
 
 stages:
-- stage: Deploy
-  displayName: Deploy to WebApp
+- stage: Build
+  displayName: Build .Net Core Solution
   jobs:
-  - job: Deploy
+  - job: Build
     pool:
-      vmImage: windows-latest
+      vmImage: ubuntu-latest
     steps:
-    #download artifacts
-    - download: eshoponweb-ci
-  
-    # Deploy App Service Plan + App Service using Bicep
-    - task: AzureResourceManagerTemplateDeployment@3
-      displayName: Deploy App Service Plan Bicep
+    - task: DotNetCoreCLI@2
+      displayName: Restore
       inputs:
-        deploymentScope: 'Resource Group'
-        azureResourceManagerConnection: '$(azureserviceconnection)'
-        subscriptionId: '$(subscriptionid)'
-        action: 'Create Or Update Resource Group'
-        resourceGroupName: '$(resource-group)'
-        location: '$(location)'
-        templateLocation: 'Linked artifact'
-        csmFile: '$(Pipeline.Workspace)/eshoponweb-ci/Bicep/$(templateFile)'
-        overrideParameters: '-webAppName $(webappname) -location $(location)'
-        deploymentMode: 'Incremental'
-        deploymentOutputs: 'asp-json'
-    
-    #Publish Website to Azure WebApp
-    - task: AzureRmWebAppDeployment@4
-      displayName: Publish Website to WebApp
-      inputs:
-        ConnectionType: 'AzureRM'
-        azureSubscription: '$(azureserviceconnection)'
-        appType: 'webApp'
-        WebAppName: '$(webappname)'
-        packageForLinux: '$(Pipeline.Workspace)/eshoponweb-ci/Website/Web.zip'
-      
+        command: 'restore'
+        projects: '**/*.sln'
+        feedsToUse: 'select'
 
+    - task: DotNetCoreCLI@2
+      displayName: Build
+      inputs:
+        command: 'build'
+        projects: '**/*.sln'
     
+    - task: DotNetCoreCLI@2
+      displayName: Test
+      inputs:
+        command: 'test'
+        projects: 'tests/UnitTests/*.csproj'
+    
+    - task: DotNetCoreCLI@2
+      displayName: Publish
+      inputs:
+        command: 'publish'
+        publishWebProjects: true
+        arguments: '-o $(Build.ArtifactStagingDirectory)'
+    
+    - task: PublishPipelineArtifact@1
+      displayName: Publish Artifacts ADO - Website
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifact: 'Website'
+        publishLocation: 'pipeline'
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish Artifacts ADO - Bicep
+      inputs:
+        targetPath: '$(Build.SourcesDirectory)/infra/webapp.bicep'
+        artifact: 'Bicep'
+        publishLocation: 'pipeline'
