@@ -1,7 +1,7 @@
 resources:
   pipelines:
-    - pipeline: eshoponweb-ci
-      source: eshoponweb-ci 
+    - pipeline: eshoponweb-cd-webapp-code.yml
+      source: eshoponweb-cd-webapp-code.yml
       trigger: true
 
 
